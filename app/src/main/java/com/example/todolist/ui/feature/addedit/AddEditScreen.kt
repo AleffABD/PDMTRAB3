@@ -34,10 +34,13 @@ fun AddEditScreen(
     navigateBack: () -> Unit,
 ) {
     val context = LocalContext.current.applicationContext
+
     val database = TodoDatabaseProvider.provide(context)
+
     val repository = TodoRepositoryImpl(
-        dao = database.todoDao
+        dao = database.todoDao() // ✅ AQUI ESTAVA O ERRO
     )
+
     val viewModel = viewModel<AddEditViewModel> {
         AddEditViewModel(
             id = id,
@@ -45,35 +48,27 @@ fun AddEditScreen(
         )
     }
 
-    val title = viewModel.title
-    val description = viewModel.description
-
-    val snackbarHostState = remember {
-        SnackbarHostState()
-    }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { uiEvent ->
             when (uiEvent) {
                 is UiEvent.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(
-                        message = uiEvent.message,
-                    )
+                    snackbarHostState.showSnackbar(uiEvent.message)
                 }
 
                 UiEvent.NavigateBack -> {
                     navigateBack()
                 }
 
-                is UiEvent.Navigate<*> -> {
-                }
+                else -> Unit
             }
         }
     }
 
     AddEditContent(
-        title = title,
-        description = description,
+        title = viewModel.title,
+        description = viewModel.description,
         snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent
     )
@@ -89,11 +84,9 @@ fun AddEditContent(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    onEvent(AddEditEvent.Save)
-                }
+                onClick = { onEvent(AddEditEvent.Save) }
             ) {
-                Icon(Icons.Default.Check, contentDescription = "Save")
+                Icon(Icons.Default.Check, contentDescription = "Salvar")
             }
         },
         snackbarHost = {
@@ -106,32 +99,26 @@ fun AddEditContent(
                 .padding(16.dp)
         ) {
             OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 value = title,
                 onValueChange = {
-                    onEvent(
-                        AddEditEvent.TitleChanged(it)
-                    )
+                    onEvent(AddEditEvent.TitleChanged(it))
                 },
                 placeholder = {
-                    Text(text = "Title")
+                    Text(text = "Título")
                 }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 value = description ?: "",
                 onValueChange = {
-                    onEvent(
-                        AddEditEvent.DescriptionChanged(it)
-                    )
+                    onEvent(AddEditEvent.DescriptionChanged(it))
                 },
                 placeholder = {
-                    Text(text = "Description (optional)")
+                    Text(text = "Descrição (opcional)")
                 }
             )
         }

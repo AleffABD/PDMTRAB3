@@ -39,7 +39,7 @@ fun ListScreen(
     val context = LocalContext.current.applicationContext
     val database = TodoDatabaseProvider.provide(context)
     val repository = TodoRepositoryImpl(
-        dao = database.todoDao
+        dao = database.todoDao()
     )
     val viewModel = viewModel<ListViewModel> {
         ListViewModel(repository = repository)

@@ -7,11 +7,12 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [TodoEntity::class],
-    version = 1,
+    version = 2,
+    exportSchema = false
 )
 abstract class TodoDatabase : RoomDatabase() {
 
-    abstract val todoDao: TodoDao
+    abstract fun todoDao(): TodoDao
 }
 
 object TodoDatabaseProvider {
@@ -25,7 +26,10 @@ object TodoDatabaseProvider {
                 context.applicationContext,
                 TodoDatabase::class.java,
                 "todo-app"
-            ).build()
+            )
+                .fallbackToDestructiveMigration()
+                .build()
+
             INSTANCE = instance
             instance
         }

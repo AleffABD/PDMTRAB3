@@ -1,6 +1,7 @@
 package com.example.todolist.data
 
 import com.example.todolist.domain.Todo
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -8,13 +9,18 @@ class TodoRepositoryImpl(
     private val dao: TodoDao
 ) : TodoRepository {
 
+    private val userId: String
+        get() = FirebaseAuth.getInstance().currentUser?.uid
+            ?: throw IllegalStateException("Usuário não autenticado")
+
     override suspend fun insert(title: String, description: String?, id: Long?) {
         val entity = id?.let {
-            dao.getBy(it)?.copy(
+            dao.getBy(it, userId)?.copy(
                 title = title,
                 description = description,
             )
         } ?: TodoEntity(
+            userId = userId,
             title = title,
             description = description,
             isCompleted = false,
@@ -24,36 +30,35 @@ class TodoRepositoryImpl(
     }
 
     override suspend fun updateCompleted(id: Long, isCompleted: Boolean) {
-        val existingEntity = dao.getBy(id) ?: return
-        val updatedEntity = existingEntity.copy(isCompleted = isCompleted)
-        dao.insert(updatedEntity)
+        val existing = dao.getBy(id, userId) ?: return
+        dao.insert(existing.copy(isCompleted = isCompleted))
     }
 
     override suspend fun delete(id: Long) {
-        val existingEntity = dao.getBy(id) ?: return
-        dao.delete(existingEntity)
+        val existing = dao.getBy(id, userId) ?: return
+        dao.delete(existing)
     }
 
     override fun getAll(): Flow<List<Todo>> {
-        return dao.getAll().map { entities ->
-            entities.map { entity ->
+        return dao.getAll(userId).map { entities ->
+            entities.map {
                 Todo(
-                    id = entity.id,
-                    title = entity.title,
-                    description = entity.description,
-                    isCompleted = entity.isCompleted,
+                    id = it.id,
+                    title = it.title,
+                    description = it.description,
+                    isCompleted = it.isCompleted,
                 )
             }
         }
     }
 
     override suspend fun getBy(id: Long): Todo? {
-        return dao.getBy(id)?.let { entity ->
+        return dao.getBy(id, userId)?.let {
             Todo(
-                id = entity.id,
-                title = entity.title,
-                description = entity.description,
-                isCompleted = entity.isCompleted,
+                id = it.id,
+                title = it.title,
+                description = it.description,
+                isCompleted = it.isCompleted,
             )
         }
     }

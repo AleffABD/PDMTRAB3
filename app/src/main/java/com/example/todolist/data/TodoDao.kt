@@ -1,10 +1,6 @@
 package com.example.todolist.data
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -16,9 +12,9 @@ interface TodoDao {
     @Delete
     suspend fun delete(entity: TodoEntity)
 
-    @Query("SELECT * FROM todos")
-    fun getAll(): Flow<List<TodoEntity>>
+    @Query("SELECT * FROM todos WHERE userId = :userId")
+    fun getAll(userId: String): Flow<List<TodoEntity>>
 
-    @Query("SELECT * FROM todos WHERE id = :id")
-    suspend fun getBy(id: Long): TodoEntity?
+    @Query("SELECT * FROM todos WHERE id = :id AND userId = :userId")
+    suspend fun getBy(id: Long, userId: String): TodoEntity?
 }
